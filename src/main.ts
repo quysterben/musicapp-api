@@ -9,6 +9,10 @@ async function bootstrap() {
     .setTitle('Musicapp API')
     .setDescription('The NestJS API description')
     .setVersion('1.0')
+    .addTag('Auth')
+    .addTag('User')
+    .addTag('Playlist')
+    .addTag('Song')
     .build()
 
   const document = SwaggerModule.createDocument(app, config)

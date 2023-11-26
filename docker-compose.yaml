@@ -4,10 +4,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: agora-api
+    container_name: musicapp-api
+    command: yarn start:dev
     ports:
-      - '${APP_PORT}:8800'
-    restart: unless-stopped
+      - ${PORT}:8800
+    # restart: unless-stopped
     volumes:
       - .:/app
       - /app/node_modules
