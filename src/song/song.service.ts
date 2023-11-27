@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Song } from './entities/song.entity'
-import { Repository } from 'typeorm'
+import { Like, Repository } from 'typeorm'
 import { CreateBulkSongDto } from './dto/create-bulk-song.dto'
 import { User } from 'src/user/entities/user.entity'
 import { Notification } from 'src/notification/entities/notification.entity'
@@ -112,6 +112,14 @@ export class SongService {
     return this.songRepo.update(songId, updateSongDto)
   }
 
+  async searchSongs(keyword: string) {
+    return await this.songRepo.find({
+      where: {
+        name: Like(`%${keyword}%`)
+      }
+    })
+  }
+
   async delete(songId: number, user: User): Promise<any> {
     const song = await this.songRepo.findOne({
       where: {
@@ -140,5 +148,80 @@ export class SongService {
     }
 
     return this.songRepo.delete(songId)
+  }
+
+  async changeFavorite(userId: number, songId: number): Promise<any> {
+    try {
+      let isFavorited: number = -1
+      const song = await this.songRepo.findOne({
+        where: {
+          id: songId
+        },
+        relations: {
+          user: true
+        },
+        select: {
+          user: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true
+          }
+        }
+      })
+      if (!song) {
+        throw new HttpException('Song not found', HttpStatus.NOT_FOUND)
+      }
+      const user = await this.userRepo.findOne({
+        where: { id: userId },
+        relations: { favoriteSongs: true }
+      })
+
+      if (user) {
+        isFavorited = user.favoriteSongs.findIndex(item => {
+          return item.id === song.id
+        })
+
+        if (isFavorited > -1) {
+          user.favoriteSongs = user.favoriteSongs.filter(item => item.id !== song.id)
+        } else {
+          user.favoriteSongs.push(song)
+        }
+      }
+
+      // create notification
+      if (isFavorited < 0 && user.id !== song.user.id) {
+        const noti = await this.notiRepo.save({
+          content: `${user.first_name} đã thêm bài ${song.name} vào danh sách yêu thích`,
+          user: song.user
+        })
+        this.eventGateway.handleEmitSocket({
+          data: noti.content,
+          event: 'notify',
+          to: song.user.email
+        })
+      }
+
+      if (isFavorited > -1 && user.id !== song.user.id) {
+        const str = `${user.first_name} đã thêm bài ${song.name}`
+        const notifi = await this.notiRepo.findOne({
+          where: {
+            content: Like(`%${str}%`)
+          }
+        })
+
+        await this.notiRepo.delete(notifi.id)
+      }
+
+      return {
+        success: true,
+        result: {
+          favorited: isFavorited > -1 ? false : true,
+          response: await this.userRepo.save(user)
+        }
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
   }
 }

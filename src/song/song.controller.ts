@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   Request,
   UploadedFile,
   UseInterceptors,
@@ -121,6 +122,15 @@ export class SongController {
   }
 
   @Public(true)
+  @Get('search')
+  async searchSongs(@Query() query: any): Promise<any> {
+    return {
+      success: true,
+      result: await this.songService.searchSongs(query.keyword)
+    }
+  }
+
+  @Public(true)
   @Get(':id')
   async getSong(@Param('id', ParseIntPipe) songId: number): Promise<any> {
     return {
@@ -157,6 +167,19 @@ export class SongController {
     await this.songService.delete(songId, user)
     return {
       success: true
+    }
+  }
+
+  @ApiBearerAuth()
+  @Get('favorite/:id')
+  async changeFavorite(
+    @GetUserRequest() user: User,
+    @Param('id', ParseIntPipe) songId: number
+  ): Promise<any> {
+    try {
+      return await this.songService.changeFavorite(user.id, songId)
+    } catch (error) {
+      throw new BadRequestException(error.message)
     }
   }
 }
