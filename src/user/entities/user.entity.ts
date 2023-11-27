@@ -66,6 +66,12 @@ export class User {
   @JoinTable()
   favoriteSongs: Song[]
 
+  @ManyToMany(() => Song, song => song.recentUsers)
+  @JoinTable({
+    name: 'user_recent_songs_song'
+  })
+  recentSongs: Song[]
+
   @OneToMany(() => Playlist, playlist => playlist.user)
   playlists: Playlist[]
 }

@@ -28,6 +28,9 @@ export class Song {
   @Column()
   url: string
 
+  @Column({ default: 0 })
+  likes: number
+
   @CreateDateColumn()
   created_at: Date
 
@@ -39,4 +42,7 @@ export class Song {
 
   @ManyToMany(() => User, user => user.favoriteSongs)
   likedUsers: User[]
+
+  @ManyToMany(() => User, user => user.favoriteSongs)
+  recentUsers: User[]
 }

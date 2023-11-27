@@ -44,12 +44,19 @@ export class SongService {
     return await this.songRepo.createQueryBuilder().insert().into(Song).values(bulkData).execute()
   }
 
-  async getAllSong(): Promise<any> {
+  async getAllSong(isFetchTop10?: boolean): Promise<any> {
+    if (isFetchTop10) {
+      return await this.songRepo
+        .createQueryBuilder('song')
+        .leftJoinAndSelect('song.user', 'user')
+        .orderBy('song.likes', 'DESC')
+        .limit(10)
+        .getMany()
+    }
+
     return await this.songRepo
       .createQueryBuilder('song')
       .leftJoinAndSelect('song.user', 'user')
-      .leftJoinAndSelect('song.likedUsers', 'likedUsers')
-      .loadRelationCountAndMap('song.likedUsers', 'song.likedUsers')
       .orderBy('song.name', 'ASC')
       .getMany()
   }
@@ -67,6 +74,19 @@ export class SongService {
       throw new HttpException('Song not found!!', HttpStatus.NOT_FOUND)
     }
     return song
+  }
+
+  async getSongRecent(userId: number): Promise<any> {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: { recentSongs: true }
+    })
+
+    if (!user) {
+      throw new HttpException('User not found!!', HttpStatus.NOT_FOUND)
+    }
+
+    return user.recentSongs
   }
 
   async getSongByUserId(userId: number): Promise<any> {
@@ -151,6 +171,7 @@ export class SongService {
   }
 
   async changeFavorite(userId: number, songId: number): Promise<any> {
+    const promises = []
     try {
       let isFavorited: number = -1
       const song = await this.songRepo.findOne({
@@ -191,12 +212,15 @@ export class SongService {
 
       // create notification
       if (isFavorited < 0 && user.id !== song.user.id) {
-        const noti = await this.notiRepo.save({
-          content: `${user.first_name} đã thêm bài ${song.name} vào danh sách yêu thích`,
-          user: song.user
-        })
+        promises.push(
+          this.notiRepo.save({
+            content: `${user.first_name} đã thêm bài ${song.name} vào danh sách yêu thích`,
+            user: song.user
+          })
+        )
+
         this.eventGateway.handleEmitSocket({
-          data: noti.content,
+          data: `${user.first_name} đã thêm bài ${song.name} vào danh sách yêu thích`,
           event: 'notify',
           to: song.user.email
         })
@@ -210,18 +234,56 @@ export class SongService {
           }
         })
 
-        await this.notiRepo.delete(notifi.id)
+        promises.push(this.notiRepo.delete(notifi.id))
       }
+
+      if (isFavorited > -1) {
+        song.likes -= 1
+      } else {
+        song.likes += 1
+      }
+
+      promises.push(this.songRepo.save(song))
+      promises.push(this.userRepo.save(user))
+
+      const result = await Promise.all(promises)
 
       return {
         success: true,
         result: {
           favorited: isFavorited > -1 ? false : true,
-          response: await this.userRepo.save(user)
+          response: user.id !== song.user.id ? result[2] : result[1]
         }
       }
     } catch (error) {
       throw new BadRequestException(error.message)
     }
+  }
+
+  async addRecentSong(userId: number, songId: number): Promise<any> {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: { recentSongs: true }
+    })
+
+    const song = await this.songRepo.findOne({
+      where: { id: songId }
+    })
+
+    if (!song) {
+      throw new HttpException('Song not found', HttpStatus.NOT_FOUND)
+    }
+
+    const newRecentSongs = user.recentSongs.filter(item => item.id !== song.id)
+
+    newRecentSongs.unshift(song)
+
+    if (newRecentSongs.length > 10) {
+      newRecentSongs.pop()
+    }
+
+    user.recentSongs = newRecentSongs
+
+    return await this.userRepo.save(user)
   }
 }
