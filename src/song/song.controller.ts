@@ -114,10 +114,11 @@ export class SongController {
 
   @Public(true)
   @Get()
-  async getAllSong(): Promise<any> {
+  async getSongs(@Query('top10') isFetchTop10S: string) {
+    const isFetchTop10 = isFetchTop10S === 'true' ? true : false
     return {
       success: true,
-      result: await this.songService.getAllSong()
+      result: await this.songService.getAllSong(isFetchTop10)
     }
   }
 
@@ -136,6 +137,16 @@ export class SongController {
     return {
       success: true,
       result: await this.songService.getSong(songId)
+    }
+  }
+
+  @ApiBearerAuth()
+  @Get('user/recent')
+  async getFavoriteSongs(@GetUserRequest() user: User): Promise<any> {
+    console.log(user)
+    return {
+      success: true,
+      result: await this.songService.getSongRecent(user.id)
     }
   }
 
@@ -180,6 +191,20 @@ export class SongController {
       return await this.songService.changeFavorite(user.id, songId)
     } catch (error) {
       throw new BadRequestException(error.message)
+    }
+  }
+
+  @ApiBearerAuth()
+  @Post('recent/:id')
+  async changeRecent(
+    @GetUserRequest() user: User,
+    @Param('id', ParseIntPipe) songId: number
+  ): Promise<any> {
+    await this.songService.addRecentSong(user.id, songId)
+
+    return {
+      success: true,
+      message: 'Add recent successfully'
     }
   }
 }

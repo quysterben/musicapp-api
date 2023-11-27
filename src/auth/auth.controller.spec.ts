@@ -23,7 +23,8 @@ describe('AuthController', () => {
     songs: [],
     notifications: [],
     favoriteSongs: [],
-    playlists: []
+    playlists: [],
+    recentSongs: []
   }
 
   const mockAuthService = {
