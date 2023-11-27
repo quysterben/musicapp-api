@@ -118,7 +118,7 @@ export class UserController {
 
     return {
       success: true,
-      result: await this.userService.updateAvatar(req.user.id, cloudFile.url)
+      result: await this.userService.updateAvatar(req.user.id, cloudFile.secure_url)
     }
   }
 }
