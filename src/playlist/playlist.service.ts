@@ -30,12 +30,22 @@ export class PlaylistService {
           }
         },
         relations: {
-          songs: true
+          songs: true,
+          user: true
         },
         order: {
           created_at: 'ASC',
           songs: {
             name: 'ASC'
+          }
+        },
+        select: {
+          user: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            avatar: true,
+            email: true
           }
         }
       })
