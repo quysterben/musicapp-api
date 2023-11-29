@@ -1,7 +1,6 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
+  ForbiddenException,
   Injectable,
   NotFoundException
 } from '@nestjs/common'
@@ -71,7 +70,7 @@ export class SongService {
       .getOne()
 
     if (!song) {
-      throw new HttpException('Song not found!!', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Song not found!!')
     }
     return song
   }
@@ -83,7 +82,7 @@ export class SongService {
     })
 
     if (!user) {
-      throw new HttpException('User not found!!', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('User not found!!')
     }
 
     return user.recentSongs
@@ -96,7 +95,7 @@ export class SongService {
         relations: { songs: true }
       })
       if (!user) {
-        throw new HttpException('user not found !', HttpStatus.NOT_FOUND)
+        throw new NotFoundException('User not found!!')
       }
       console.log(user)
       return user.songs
@@ -158,13 +157,17 @@ export class SongService {
       }
     })
 
+    if (!song) {
+      throw new NotFoundException('Song not found!')
+    }
+
     if (song) {
       if (song.user.id !== user.id) {
-        throw new BadRequestException('You do not have permission!')
+        throw new ForbiddenException('You do not have permission!')
       }
 
-      await this.cloudinary.destroyFile(song.url, 'audio')
-      await this.cloudinary.destroyFile(song.artwork, 'image-art')
+      // await this.cloudinary.destroyFile(song.url, 'audio')
+      // await this.cloudinary.destroyFile(song.artwork, 'image-art')
     }
 
     return this.songRepo.delete(songId)
@@ -191,7 +194,7 @@ export class SongService {
         }
       })
       if (!song) {
-        throw new HttpException('Song not found', HttpStatus.NOT_FOUND)
+        throw new NotFoundException('Song not found')
       }
       const user = await this.userRepo.findOne({
         where: { id: userId },
@@ -271,7 +274,7 @@ export class SongService {
     })
 
     if (!song) {
-      throw new HttpException('Song not found', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Song not found')
     }
 
     const newRecentSongs = user.recentSongs.filter(item => item.id !== song.id)

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { RegisterDto } from './dto/register.dto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { User } from 'src/user/entities/user.entity'
@@ -20,7 +20,7 @@ export class AuthService {
     const user = await this.userRepo.findOneBy({ email: registerDto.email })
 
     if (user) {
-      throw new HttpException('Email already have an account', HttpStatus.BAD_REQUEST)
+      throw new BadRequestException('Email already have an account')
     }
 
     const hashPassword = await this.hashPassword(registerDto.password)
@@ -39,12 +39,12 @@ export class AuthService {
       .getOne()
 
     if (!user) {
-      throw new HttpException('Email is not exist', HttpStatus.UNAUTHORIZED)
+      throw new UnauthorizedException('Email is not exist')
     }
 
     const checkPass = bcrypt.compareSync(loginDto.password, user.password)
     if (!checkPass) {
-      throw new HttpException('Is password is not correct', HttpStatus.UNAUTHORIZED)
+      throw new UnauthorizedException('Is password is not correct')
     }
 
     // generate access token and refresh token
@@ -80,7 +80,7 @@ export class AuthService {
       })
       return payload['email']
     } catch (e) {
-      throw new HttpException('unauthorized', HttpStatus.UNAUTHORIZED)
+      throw new UnauthorizedException('unauthorized')
     }
   }
 

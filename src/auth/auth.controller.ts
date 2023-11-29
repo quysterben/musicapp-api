@@ -27,6 +27,7 @@ export class AuthController {
   ) {}
 
   @Public(true)
+  @UsePipes(ValidationPipe)
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     try {
