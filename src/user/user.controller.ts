@@ -56,9 +56,9 @@ export class UserController {
     }
   }
 
-  @Get('curr/info')
-  async getCurrUser(@GetUserRequest() user: User) {
-    const userDetail = await this.userService.getCurrUser(user.id)
+  @Post('curr/info')
+  async getCurrUser(@GetUserRequest() user: User, @Body() body: any) {
+    const userDetail = await this.userService.getCurrUser(user.id, body.astist)
     return {
       success: true,
       result: userDetail

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { User } from './entities/user.entity'
-import { DeleteResult, Like, Repository, UpdateResult } from 'typeorm'
+import { DeleteResult, Like, MoreThanOrEqual, Repository, UpdateResult } from 'typeorm'
 import * as bcrypt from 'bcrypt'
 import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
@@ -67,11 +67,29 @@ export class UserService {
     })
   }
 
-  async getCurrUser(id: number): Promise<User> {
+  async getCurrUser(id: number, astist: any): Promise<User> {
+    let filter
+    if (astist) {
+      filter = {
+        id: id,
+        favoriteSongs: {
+          artist: astist,
+          favoriteSongs: {
+            likes: MoreThanOrEqual(3)
+          }
+        }
+      }
+    } else {
+      filter = {
+        id: id,
+        favoriteSongs: {
+          likes: MoreThanOrEqual(3)
+        }
+      }
+    }
+
     return await this.userRepo.findOne({
-      where: {
-        id
-      },
+      where: filter,
       relations: {
         songs: true,
         favoriteSongs: true
