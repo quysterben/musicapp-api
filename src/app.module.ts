@@ -12,6 +12,7 @@ import { NotificationModule } from './notification/notification.module'
 import { APP_GUARD } from '@nestjs/core'
 import { JwtAuthGuard } from './auth/guards/jwt.guard'
 import { RolesGuard } from './auth/guards/roles.guard'
+import { AppController } from './app.controller'
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { RolesGuard } from './auth/guards/roles.guard'
     AuthModule,
     NotificationModule
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
