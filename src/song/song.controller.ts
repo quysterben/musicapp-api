@@ -161,6 +161,7 @@ export class SongController {
 
   @ApiBearerAuth()
   @Put(':id')
+  @UsePipes(ValidationPipe)
   async update(
     @Param('id', ParseIntPipe) songId: number,
     @GetUserRequest() user: User,

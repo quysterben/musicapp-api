@@ -1,4 +1,9 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Song } from 'src/song/entities/song.entity'
 import { User } from 'src/user/entities/user.entity'
@@ -74,7 +79,7 @@ export class PlaylistService {
     })
 
     if (!playlist) {
-      throw new HttpException('Playlist not found !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Playlist not found !')
     }
 
     if (playlist.user.id !== user.id) {
@@ -98,11 +103,11 @@ export class PlaylistService {
     })
 
     if (!playlist) {
-      throw new HttpException('Playlist not found !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Playlist not found !')
     }
 
     if (playlist.user.id !== user.id) {
-      throw new BadRequestException('you can not access this playlist')
+      throw new ForbiddenException('you can not access this playlist')
     }
 
     return await this.playlistRepo.update(playlistId, updatePlaylistDto)
@@ -122,11 +127,11 @@ export class PlaylistService {
     })
 
     if (!playlist) {
-      throw new HttpException('Playlist not found !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Playlist not found !')
     }
 
     if (playlist.user.id !== user.id) {
-      throw new BadRequestException('you can not access this playlist')
+      throw new ForbiddenException('you can not access this playlist')
     }
 
     return this.playlistRepo.delete(playlistId)
@@ -156,11 +161,11 @@ export class PlaylistService {
     const song = await this.songRepo.findOneBy({ id: addSongDto.songId })
 
     if (!song) {
-      throw new HttpException('Song not found !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Song not found !')
     }
 
     if (!playlist) {
-      throw new HttpException('Playlist not found !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Playlist not found !')
     }
 
     if (playlist.user.id !== user.id) {
@@ -195,11 +200,11 @@ export class PlaylistService {
     const song = await this.songRepo.findOneBy({ id: removeSongDto.songId })
 
     if (!song) {
-      throw new HttpException('Song not found !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Song not found !')
     }
 
     if (!playlist) {
-      throw new HttpException('Playlist not found !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Playlist not found !')
     }
 
     if (playlist.user.id !== user.id) {
@@ -209,7 +214,7 @@ export class PlaylistService {
     if (playlist.songs.findIndex(val => val.id === song.id) > -1) {
       playlist.songs = playlist.songs.filter(val => val.id !== song.id)
     } else {
-      throw new HttpException('Song not existed in playlist !', HttpStatus.NOT_FOUND)
+      throw new NotFoundException('Song not existed in playlist !')
     }
 
     return await this.playlistRepo.save(playlist)
